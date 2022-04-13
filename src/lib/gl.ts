@@ -1,4 +1,4 @@
-export const createShader = (
+export const _createShader = (
 	gl: WebGL2RenderingContext,
 	type: "vert" | "frag",
 	source: string
@@ -30,7 +30,7 @@ export const createShader = (
 	throw new Error(error || "Could not compile shader");
 };
 
-export const createProgram = (
+export const _createProgram = (
 	gl: WebGL2RenderingContext,
 	{ vert, frag }: { vert: WebGLShader; frag: WebGLShader }
 ) => {
