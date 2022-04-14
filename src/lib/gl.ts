@@ -1,3 +1,5 @@
+import type { Geometry } from "./Geometry";
+
 export const _createShader = (
 	gl: WebGL2RenderingContext,
 	type: "vert" | "frag",
@@ -11,6 +13,7 @@ export const _createShader = (
 	}
 
 	const shader = gl.createShader(t);
+
 	if (!shader) {
 		throw new Error("Could not create shader");
 	}
@@ -25,14 +28,21 @@ export const _createShader = (
 	}
 
 	const error = gl.getShaderInfoLog(shader);
-
 	gl.deleteShader(shader);
 	throw new Error(error || "Could not compile shader");
 };
 
 export const _createProgram = (
 	gl: WebGL2RenderingContext,
-	{ vert, frag }: { vert: WebGLShader; frag: WebGLShader }
+	{
+		vert,
+		frag,
+		attributes,
+	}: {
+		vert: WebGLShader;
+		frag: WebGLShader;
+		attributes: Geometry["attributes"];
+	}
 ) => {
 	const program = gl.createProgram();
 	if (!program) {
@@ -41,6 +51,11 @@ export const _createProgram = (
 
 	gl.attachShader(program, vert);
 	gl.attachShader(program, frag);
+
+	for (const [key, { location }] of Object.entries(attributes)) {
+		gl.bindAttribLocation(program, location, key);
+	}
+
 	gl.linkProgram(program);
 
 	const success = gl.getProgramParameter(program, gl.LINK_STATUS);

@@ -33,6 +33,7 @@ export class Mesh extends Transform {
 		this.geometry = geometry;
 		this.mode = gl[mode];
 
-		this.geometry.setupBuffer(program);
+		this.program.link(this.geometry.attributes);
+		this.geometry.setupBuffer();
 	}
 }

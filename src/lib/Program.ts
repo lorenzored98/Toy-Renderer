@@ -1,5 +1,6 @@
 import { _createProgram, _createShader } from "./gl";
 import { Mat4 } from "./math/Mat4";
+import type { Geometry } from "./Geometry";
 import type { Vec2ArrObj } from "./math/Vec2";
 import type { Vec3ArrObj } from "./math/Vec3";
 import type { Vec4ArrObj } from "./math/Vec4";
@@ -59,22 +60,35 @@ export class Program {
 		},
 	};
 
+	vertSource: string = "";
+	fragSource: string = "";
+
 	constructor(
 		gl: WebGL2RenderingContext,
 		{ vert, frag, uniforms = {} }: ProgramProps
 	) {
 		this.gl = gl;
-		this.id = _createProgram(gl, {
-			vert: _createShader(gl, "vert", vert),
-			frag: _createShader(gl, "frag", frag),
-		});
-
+		this.vertSource = vert;
+		this.fragSource = frag;
 		this.uniforms = uniforms;
 
-		const ac = gl.getProgramParameter(this.id, gl.ACTIVE_UNIFORMS);
+		this.id = 0;
+	}
+
+	link(attributes: Geometry["attributes"]) {
+		this.id = _createProgram(this.gl, {
+			vert: _createShader(this.gl, "vert", this.vertSource),
+			frag: _createShader(this.gl, "frag", this.fragSource),
+			attributes,
+		});
+
+		const ac = this.gl.getProgramParameter(
+			this.id,
+			this.gl.ACTIVE_UNIFORMS
+		);
 
 		for (let i = 0; i < ac; i++) {
-			const un = gl.getActiveUniform(this.id, i);
+			const un = this.gl.getActiveUniform(this.id, i);
 			if (!un) continue;
 
 			const { size, type, name } = un;
@@ -108,16 +122,12 @@ export class Program {
 		this.gl.useProgram(this.id);
 	}
 
-	getAttribLocation(name: string) {
-		return this.gl.getAttribLocation(this.id, name);
-	}
-
 	getUniformLocation(name: string) {
 		return this.gl.getUniformLocation(this.id, name);
 	}
 
-	// TODO: Fix typescript crying about values
-	setUniformValue(key: string, u: Uniform) {
+	// TODO: Fix typescript crying about values without using any...
+	setUniformValue(key: string, u: any) {
 		this.use();
 		const { type, location } = this.uniformsInfo[key];
 

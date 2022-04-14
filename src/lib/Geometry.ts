@@ -1,5 +1,3 @@
-import type { Program } from "./Program";
-
 export type GeometryProps = {
 	usage?: "STATIC_DRAW" | "DYNAMIC_DRAW" | "STREAM_DRAW";
 };
@@ -54,8 +52,9 @@ export class Geometry {
 
 	addAttribute(
 		key: string,
-		{ size, data, normalized = false, location = -1 }: PropsAttributeValue
+		{ size, data, normalized = false }: PropsAttributeValue
 	) {
+		const location = Object.keys(this.attributes).length;
 		const attr: AttributeValue = {
 			size,
 			data,
@@ -66,7 +65,7 @@ export class Geometry {
 		this.attributes[key] = attr;
 	}
 
-	setupBuffer(program: Program) {
+	setupBuffer() {
 		const b = Float32Array.BYTES_PER_ELEMENT;
 
 		const entries = Object.entries(this.attributes);
@@ -117,8 +116,6 @@ export class Geometry {
 			if (key !== "index") {
 				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
 				this.gl.bufferData(this.gl.ARRAY_BUFFER, fData, this.usage);
-
-				attr.location = program.getAttribLocation(key);
 			} else {
 				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ebo);
 				this.gl.bufferData(
@@ -133,7 +130,7 @@ export class Geometry {
 		offset = 0;
 
 		for (const [key, attr] of entries) {
-			if (key !== "index") {
+			if (key !== "index" && attr.location > -1) {
 				const type =
 					attr.data instanceof Float32Array
 						? this.gl.FLOAT
