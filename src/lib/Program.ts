@@ -37,26 +37,40 @@ export class Program {
 	id: WebGLProgram;
 	uniforms: { [key: string]: Uniform } = {};
 	uniformsInfo: UniformsInfo = {
-		model: {
+		modelMatrix: {
 			location: -1,
 			isStruct: false,
 			size: 1,
 			type: 35676,
 			autoUpdate: true,
 		},
-		view: {
+		viewMatrix: {
 			location: -1,
 			isStruct: false,
 			size: 1,
 			type: 35676,
 			autoUpdate: true,
 		},
-		projection: {
+		projectionMatrix: {
 			location: -1,
 			isStruct: false,
 			size: 1,
 			type: 35676,
 			autoUpdate: false,
+		},
+		normalMatrix: {
+			location: -1,
+			isStruct: false,
+			size: 1,
+			type: 35675,
+			autoUpdate: true,
+		},
+		cameraPos: {
+			location: -1,
+			isStruct: false,
+			size: 1,
+			type: 35665,
+			autoUpdate: true,
 		},
 	};
 
@@ -112,7 +126,13 @@ export class Program {
 				this.setUniformValue(name, this.uniforms[name]);
 			}
 
-			if (name === "model" || name === "view" || name === "projection") {
+			if (
+				name === "modelMatrix" ||
+				name === "viewMatrix" ||
+				name === "projectionMatrix" ||
+				name === "normalMatrix" ||
+				name === "cameraPos"
+			) {
 				this.uniformsInfo[name].location = location;
 			}
 		}
@@ -131,15 +151,20 @@ export class Program {
 		this.use();
 		const { type, location } = this.uniformsInfo[key];
 
+		if (location < 0) return;
+
 		if (type === 35665) {
 			if (Array.isArray(u)) {
 				this.gl.uniform3f(location, u[0], u[1], u[2]);
 			} else {
 				this.gl.uniform3f(location, u.x, u.y, u.z);
 			}
+		} else if (type === 35675) {
+			// mat3
+			this.gl.uniformMatrix3fv(location, false, u);
 		} else if (type === 35676) {
 			// mat4
-			this.gl.uniformMatrix4fv(location, false, u as Float32List);
+			this.gl.uniformMatrix4fv(location, false, u);
 		} else if (type === 35678) {
 			// sampler2D
 			this.gl.uniform1i(location, (u as Texture).id);

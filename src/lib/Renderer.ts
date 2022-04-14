@@ -1,6 +1,7 @@
 import type { OrtographicCamera } from "@lib/cameras/OrtographicCamera";
 import type { PerspectiveCamera } from "@lib/cameras/PerspectiveCamera";
 import type { Scene } from "@lib/Scene";
+import { Mat3 } from "./math/Mat3";
 import { Mat4 } from "./math/Mat4";
 
 type RendererProps = {
@@ -29,23 +30,48 @@ export class Renderer {
 		// TODO: Change with a traverse fn when adding scene graph...
 		for (const child of scene.children) {
 			// TODO: Need to account previous transforms
-			const model = new Mat4();
-			model.translate(child.position);
-			model.rotate(child.rotation);
-			model.scale(child.scale);
+			const modelMatrix = new Mat4();
+			modelMatrix.translate(child.position);
+			modelMatrix.rotate(child.rotation);
+			modelMatrix.scale(child.scale);
 
-			child.program.setUniformValue("model", model.elements);
-			child.program.setUniformValue("view", camera.viewMatrix.elements);
+			child.program.setUniformValue("modelMatrix", modelMatrix.elements);
+			child.program.setUniformValue(
+				"viewMatrix",
+				camera.viewMatrix.elements
+			);
 
 			if (updatedProjection) {
 				child.program.setUniformValue(
-					"projection",
+					"projectionMatrix",
 					camera.projectionMatrix.elements
 				);
 			}
 
+			if (child.program.uniformsInfo.normalMatrix.location !== -1) {
+				/**
+				 * TODO:
+				 * From what I've seen people would transpose the modelMatrix after inverting
+				 * maybe it's because many tutorial / resource use a column major matrix but
+				 * since I use a row based one transposing breaks the matrix.
+				 * Not sure if it's that or maybe the way I construct the Mat3 is wrong..
+				 */
+				const inverseModel = Mat4.inverse(modelMatrix);
+				const normalMatrix = Mat3.fromMat4(inverseModel);
+
+				child.program.setUniformValue(
+					"normalMatrix",
+					normalMatrix.elements
+				);
+			}
+
+			if (child.program.uniformsInfo.cameraPos.location !== -1) {
+				child.program.setUniformValue("cameraPos", camera.position);
+			}
+
 			for (const key of Object.keys(child.program.uniforms)) {
-				if (child.program.uniformsInfo[key].autoUpdate) {
+				const info = child.program.uniformsInfo[key];
+				if (info && info.autoUpdate) {
 					child.program.setUniformValue(
 						key,
 						child.program.uniforms[key]

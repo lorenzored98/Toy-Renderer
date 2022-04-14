@@ -271,6 +271,29 @@ export class Mat4 {
 
 		return newMat;
 	}
+
+	transpose() {
+		const e = this.elements;
+
+		this.elements = [
+			e[0],
+			e[4],
+			e[8],
+			e[12],
+			e[1],
+			e[5],
+			e[9],
+			e[13],
+			e[2],
+			e[6],
+			e[10],
+			e[14],
+			e[3],
+			e[7],
+			e[11],
+			e[15],
+		];
+	}
 }
 
 const translation = (v: Vec3) => {
